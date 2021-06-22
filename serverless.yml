@@ -1,0 +1,37 @@
+service: alexa-list-sync
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+
+region: us-east-1
+
+package:
+  exclude:
+    - img/**
+
+functions:
+  item-added:
+    handler: alexa-list.item_added
+    events:
+      - http:
+          path: added
+          method: post
+          cors: true
+  item-removed:
+    handler: alexa-list.item_removed
+    events:
+      - http:
+          path: removed
+          method: post
+          cors: true
+  print-list:
+    handler: print-list.print_list
+    events:
+      - http:
+          path: print
+          method: get
+          cors: true
