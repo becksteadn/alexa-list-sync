@@ -1,9 +1,11 @@
 import json
 
 def item_added(event, context):
+    item = json.loads(event["body"])["item"]
+    
     body = {
-        "message": "An item was added!",
-        "input": event
+        "message": f"The item {item} was added!",
+        "item": item
     }
 
     response = {
@@ -11,14 +13,14 @@ def item_added(event, context):
         "body": json.dumps(body)
     }
 
-    print(response)
-
     return response
 
 def item_removed(event, context):
+    item = json.loads(event["body"])["item"]
+
     body = {
-        "message": "An item was removed!",
-        "input": event
+        "message": f"The item {item} was removed!",
+        "item": item
     }
 
     response = {

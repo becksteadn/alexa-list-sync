@@ -1,3 +1,9 @@
+# IoT Button setup
+iotbutton/
+
+# Serverless secrets
+secrets.json
+
 # Distribution / packaging
 .Python
 env/
