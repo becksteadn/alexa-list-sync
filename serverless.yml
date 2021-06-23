@@ -4,7 +4,8 @@ frameworkVersion: '2'
 
 custom:
   secrets: ${file(secrets.json)}
-
+  pythonRequirements:
+     dockerizePip: non-linux
 provider:
   name: aws
   runtime: python3.8
@@ -15,9 +16,16 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "secretsmanager:GetSecretValue"
-      Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${self:custom.secrets.airtableKeyARN}'
+        - "ssm:GetParameter"
+      Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:custom.secrets.airtableKeyName}'
 
+  environment:
+    paramNameAirtable: ${self:custom.secrets.airtableKeyName}
+    airtableBaseId: ${self:custom.secrets.airtableBaseId}
+    airtableTableName: ${self:custom.secrets.airtableTableName} 
+
+plugins:
+   - serverless-python-requirements
 
 package:
   exclude:
