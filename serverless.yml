@@ -22,7 +22,9 @@ provider:
   environment:
     paramNameAirtable: ${self:custom.secrets.airtableKeyName}
     airtableBaseId: ${self:custom.secrets.airtableBaseId}
-    airtableTableName: ${self:custom.secrets.airtableTableName} 
+    airtableTableName: ${self:custom.secrets.airtableTableName}
+    airtableListView: ${self:custom.secrets.airtableListView}
+    airtableAllView: ${self:custom.secrets.airtableAllView}
 
 plugins:
    - serverless-python-requirements
