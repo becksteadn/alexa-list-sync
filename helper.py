@@ -52,9 +52,11 @@ class Airtable:
             Airtable ID of the record
         """
         all_records = self.list_all_records(self.allView)
-        for record in all_records["records"]:
+        for record in all_records:
             if record["fields"]["Name"] == name:
+                print("{} name equals ID {}".format(name, record["id"]))
                 return record["id"]
+        print("Record ID for {} not found!".format(name))
         return None
 
     def create_record(self, name):
@@ -136,12 +138,8 @@ class Airtable:
             A list of Name values for each item in a view
 
         """
-        params = {
-            "view": view
-        }
-        r = requests.get(self.url, params=params, headers=self.headers)
-        records = r.json()["records"]
         items_list = list()
+        records = self.list_all_records(view)
         for item in records:
             items_list.append(item["fields"]["Name"])
         return items_list
@@ -163,5 +161,18 @@ class Airtable:
         params = {
             "view": view
         }
-        r = requests.get(self.url, params=params, headers=self.headers)
-        return r.json()
+
+        all_records = []
+
+        while True:
+            r = requests.get(self.url, params=params, headers=self.headers)
+            response = r.json()
+            if "records" in response.keys():
+                all_records.extend(response["records"])
+            
+            if "offset" in response.keys():
+                params["offset"] = response["offset"]
+            else:
+                break
+
+        return all_records

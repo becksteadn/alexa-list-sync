@@ -12,7 +12,7 @@ def get_grocery_list():
         A list of grocery items
     """
     airtable = Airtable()
-    records = airtable.list_all_records(airtable.listView)["records"]
+    records = airtable.list_all_records(airtable.listView)
     grocery_list = records_to_list(records)
     return grocery_list
 
