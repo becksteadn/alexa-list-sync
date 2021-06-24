@@ -1,3 +1,16 @@
+# IoT Button setup
+iotbutton/
+
+# Serverless secrets
+secrets.json
+
+# Serverless Python Requirements Plugin
+node_modules/
+package-lock.json
+
+# Mac Sad :(
+.DS_Store
+
 # Distribution / packaging
 .Python
 env/

@@ -2,12 +2,37 @@ service: alexa-list-sync
 
 frameworkVersion: '2'
 
+custom:
+  secrets: ${file(secrets.json)}
+  pythonRequirements:
+     dockerizePip: non-linux
+  default_stage: dev
+
 provider:
   name: aws
   runtime: python3.8
   lambdaHashingVersion: 20201221
 
-region: us-east-1
+  region: ${self:custom.secrets.REGION, 'us-east-1'}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ssm:GetParameter"
+      Resource:
+        - 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:custom.secrets.airtableKeyName}'
+    
+
+  environment:
+    paramNameAirtable: ${self:custom.secrets.airtableKeyName}
+    airtableBaseId: ${self:custom.secrets.airtableBaseId}
+    airtableTableName: ${self:custom.secrets.airtableTableName}
+    airtableListView: ${self:custom.secrets.airtableListView}
+    airtableAllView: ${self:custom.secrets.airtableAllView}
+    printTableName: ${self:service}-${opt:stage, self:custom.default_stage}
+
+plugins:
+   - serverless-python-requirements
 
 package:
   exclude:
@@ -28,10 +53,40 @@ functions:
           path: removed
           method: post
           cors: true
-  print-list:
-    handler: print-list.print_list
+  print-start:
+    handler: alexa-list.print_start
     events:
       - http:
           path: print
           method: get
           cors: true
+  print-list:
+    handler: alexa-list.list_list
+    events:
+      - http:
+          path: list
+          method: get
+          cors: true
+  print-stop:
+    handler: alexa-list.print_stop
+    events:
+      - http:
+          path: stop
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    printTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.printTableName}
+        AttributeDefinitions:
+          - AttributeName: print
+            AttributeType: S
+        KeySchema:
+          - AttributeName: print
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
