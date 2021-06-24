@@ -5,6 +5,23 @@ import requests
 class Airtable:
     """
     A class to interact with the Airtable API.
+
+    Attributes
+    ----------
+    apikey : str
+        The Airtable account API key. Retrieved from an environment variable.
+    baseId : str
+        The Airtable base ID. Can be found from the examples in https://airtable.com/api
+    table : str
+        The name of the Airtable table to use.
+    listView : str
+        The name of the view that filters for grocery list records.
+    allView : str
+        The name of the view that shows all records.
+    url : str
+        The constructed URL to use for the Airtable API. Made of baseID and table.
+    headers : dict
+        A dictionary of headers. Only contains "Authorization": "Bearer APIKEY".
     """
 
     def __init__(self):
@@ -176,3 +193,38 @@ class Airtable:
                 break
 
         return all_records
+
+class PrintTableHelper:
+    """
+    A class for handling database functions.
+    """
+
+    def __init__(self):
+        self.tableName = os.environ["printTableName"]
+        db = boto3.resource('dynamodb')
+        self.table = db.Table(self.tableName)
+
+    def get_status(self):
+        """Get print status
+        """
+
+        response = self.table.get_item(
+            Key={
+                'print': 'status'
+            }
+        )
+        item = response["Item"]
+        print(item)
+        return item
+
+    def set_print(self, value: bool):
+        """Set the print status
+        """
+
+        response = self.table.put_item(
+            Item={
+                'print': 'status',
+                'status': int(value)
+            }
+        )
+        return response

@@ -1,5 +1,5 @@
 import json
-from helper import Airtable
+from helper import Airtable, PrintTableHelper
 
 def get_grocery_list():
     """Get a list of grocery items
@@ -63,6 +63,25 @@ def update_table(item, add_item):
         response = airtable.create_record(item)
     return response
 
+def get_item_from_event(event):
+    """Pull out and transform the item name from Lambda event data
+
+    Parameters
+    ----------
+    event : dict
+        Event data
+
+    Returns
+    -------
+    str
+        Name of the item
+
+    """
+
+    item = json.loads(event["body"])["item"]
+    # Capitalize the first letter of every word
+    item = item.title()
+    return item
 
 def item_added(event, context):
     """Lambda handler for grocery item being added
@@ -79,18 +98,15 @@ def item_added(event, context):
     dict
         JSON HTTP response
     """
-    item = json.loads(event["body"])["item"]
-    
-    grocery_list = get_grocery_list()
+    item = get_item_from_event(event)
 
     item_added = update_table(item, True)
-    print(item_added)
 
     body = {
         "message": f"The item {item} was added!",
         "item": item,
-        "list": grocery_list,
-        "item_added": item_added
+        "list": get_grocery_list(),
+        "update": item_added
     }
 
     print(body)
@@ -117,18 +133,121 @@ def item_removed(event, context):
     dict
         JSON HTTP response
     """
-    item = json.loads(event["body"])["item"]
+    item = get_item_from_event(event)
 
     item_removed = update_table(item, False)
-    print(item_removed)
 
     body = {
         "message": f"The item {item} was removed!",
         "item": item,
-        "item_removed": item_removed
+        "list": get_grocery_list(),
+        "update": item_removed
     }
 
     print(body)
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+def check_print(event, context):
+    """Checks the print signal
+
+    Parameters
+    ----------
+    event : dict
+        Event data
+    context : data
+        Context data
+    """
+
+    db = PrintTableHelper()
+    item = db.get_status()
+
+    print(item)
+
+    body = {
+        "message": "Sending the status!",
+        "status": item
+    }
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+def print_start(event, context):
+    """Sends the signal to print the grocery list
+
+    Parameters
+    ----------
+    event : dict
+        Event data
+    context : data
+        Context data
+    """
+
+    db = PrintTableHelper()
+    db.set_print(True)
+
+    body = {
+        "message": "Printing the list!",
+        "status": 1
+    }
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+def list_list(event, context):
+    """Returns the grocery list
+
+    Parameters
+    ----------
+    event : dict
+        Event data
+    context : data
+        Context data
+    """
+
+    body = {
+        "message": "Listing the list!",
+        "list": get_grocery_list()
+    }
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+
+    return response
+
+def print_stop(event, context):
+    """Resets the signal to print the grocery list
+
+    Parameters
+    ----------
+    event : dict
+        Event data
+    context : data
+        Context data
+    """
+
+    db = PrintTableHelper()
+    db.set_print(False)
+
+    body = {
+        "message": "STOP THE PRINT!",
+        "status": 0
+    }
 
     response = {
         "statusCode": 200,
