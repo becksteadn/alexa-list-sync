@@ -1,5 +1,5 @@
 import json
-from helper import Airtable, PrintTableHelper
+from helper import Airtable, PrintHelper
 
 def get_grocery_list():
     """Get a list of grocery items
@@ -80,7 +80,7 @@ def get_item_from_event(event):
 
     item = json.loads(event["body"])["item"]
     # Capitalize the first letter of every word
-    item = item.title()
+    item = item.strip().title()
     return item
 
 def item_added(event, context):
@@ -164,7 +164,7 @@ def check_print(event, context):
         Context data
     """
 
-    db = PrintTableHelper()
+    db = PrintHelper()
     item = db.get_status()
 
     print(item)
@@ -192,8 +192,8 @@ def print_start(event, context):
         Context data
     """
 
-    db = PrintTableHelper()
-    db.set_print(True)
+    printer = PrintHelper()
+    printer.set_print(get_grocery_list())
 
     body = {
         "message": "Printing the list!",
@@ -241,8 +241,8 @@ def print_stop(event, context):
         Context data
     """
 
-    db = PrintTableHelper()
-    db.set_print(False)
+    printer = PrintHelper()
+    printer.del_print()
 
     body = {
         "message": "STOP THE PRINT!",

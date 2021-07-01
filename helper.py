@@ -1,6 +1,7 @@
 import os
 import boto3
 import requests
+import botocore
 
 class Airtable:
     """
@@ -194,37 +195,41 @@ class Airtable:
 
         return all_records
 
-class PrintTableHelper:
+class PrintHelper:
     """
     A class for handling database functions.
     """
 
     def __init__(self):
-        self.tableName = os.environ["printTableName"]
-        db = boto3.resource('dynamodb')
-        self.table = db.Table(self.tableName)
+        self.s3_resource = boto3.resource('s3')
+        self.bucketName = os.environ["printBucketName"]
+        self.printKey = os.environ["printListKey"]
 
     def get_status(self):
         """Get print status
         """
 
-        response = self.table.get_item(
-            Key={
-                'print': 'status'
-            }
-        )
-        item = response["Item"]
-        print(item)
-        return item
+        try:
+            self.s3_resource.Object(self.bucketName, self.printKey).load()
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == "404":
+                return False
+            else:
+                raise
+        else:
+            return True
 
-    def set_print(self, value: bool):
-        """Set the print status
+    def set_print(self, grocery_list: list):
+        """Set the print signal
         """
 
-        response = self.table.put_item(
-            Item={
-                'print': 'status',
-                'status': int(value)
-            }
-        )
-        return response
+        object = self.s3_resource.Object(self.bucketName, self.printKey)
+        object.put(Body='\n'.join(grocery_list))
+
+        return True
+
+    def del_print(self):
+        """Remove the print signal
+        """
+
+        return self.s3_resource.Object(self.bucketName, self.printKey).delete()
