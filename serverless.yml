@@ -20,16 +20,24 @@ provider:
       Action:
         - "ssm:GetParameter"
       Resource:
-        - 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:custom.secrets.airtableKeyName}'
+        - !Join ['/', [!Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter', !Ref AirtableKeyParameter]]
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+      Resource:
+        - !Join ['/', [!GetAtt GroceryListBucket.Arn, '${self:custom.secrets.printListKey}']]
     
 
   environment:
-    paramNameAirtable: ${self:custom.secrets.airtableKeyName}
+    paramNameAirtable: !Ref AirtableKeyParameter
     airtableBaseId: ${self:custom.secrets.airtableBaseId}
     airtableTableName: ${self:custom.secrets.airtableTableName}
     airtableListView: ${self:custom.secrets.airtableListView}
     airtableAllView: ${self:custom.secrets.airtableAllView}
-    printTableName: ${self:service}-${opt:stage, self:custom.default_stage}
+    printBucketName: !Ref GroceryListBucket
+    printListKey: ${self:custom.secrets.printListKey}
 
 plugins:
    - serverless-python-requirements
@@ -77,16 +85,28 @@ functions:
 
 resources:
   Resources:
-    printTable:
-      Type: AWS::DynamoDB::Table
+    GroceryListBucket:
+      Type: AWS::S3::Bucket
       Properties:
-        TableName: ${self:provider.environment.printTableName}
-        AttributeDefinitions:
-          - AttributeName: print
-            AttributeType: S
-        KeySchema:
-          - AttributeName: print
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+        BucketName: ${self:service}-${self:provider.stage}-${self:custom.secrets.printBucketName}
+        AccessControl: PublicRead
+    GroceryListBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref GroceryListBucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "s3:GetObject"
+              Resource:
+                - !Join ['/', [!GetAtt GroceryListBucket.Arn, '*']]
+              Principal: "*"
+    AirtableKeyParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: ${self:service}-${self:provider.stage}-${self:custom.secrets.airtableKeyName}
+        Description: "Airtable account API key"
+        Type: String # TODO: Change to SecureString
+        Value: ${self:custom.secrets.airtableAPIKey}
