@@ -1,6 +1,6 @@
 service: alexa-list-sync
 
-frameworkVersion: '2'
+frameworkVersion: '3'
 
 custom:
   secrets: ${file(secrets.json)}
@@ -11,7 +11,6 @@ custom:
 provider:
   name: aws
   runtime: python3.8
-  lambdaHashingVersion: 20201221
 
   region: ${self:custom.secrets.REGION, 'us-east-1'}
 
@@ -29,6 +28,7 @@ provider:
       Resource:
         - !Join ['/', [!GetAtt GroceryListBucket.Arn, '${self:custom.secrets.printListKey}']]
     
+  timeout: 10
 
   environment:
     paramNameAirtable: !Ref AirtableKeyParameter
@@ -68,6 +68,7 @@ functions:
           path: print
           method: get
           cors: true
+      - sns: ${self:custom.secrets.iotButtonArn}
   print-list:
     handler: alexa-list.list_list
     events:
@@ -88,7 +89,7 @@ resources:
     GroceryListBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:service}-${self:provider.stage}-${self:custom.secrets.printBucketName}
+        BucketName: ${self:service}-${sls:stage}-${self:custom.secrets.printBucketName}
         AccessControl: PublicRead
     GroceryListBucketPolicy:
       Type: AWS::S3::BucketPolicy
@@ -106,7 +107,7 @@ resources:
     AirtableKeyParameter:
       Type: AWS::SSM::Parameter
       Properties:
-        Name: ${self:service}-${self:provider.stage}-${self:custom.secrets.airtableKeyName}
+        Name: ${self:service}-${sls:stage}-${self:custom.secrets.airtableKeyName}
         Description: "Airtable account API key"
         Type: String # TODO: Change to SecureString
         Value: ${self:custom.secrets.airtableAPIKey}

@@ -5,17 +5,14 @@ from escpos.printer import Usb
 
 def send_to_printer(shopping_list):
     printer = Usb(idVendor=0x0416, idProduct=0x5011)
-    now = datetime.now().strftime("%m/%d/%Y")
 
     printer.set(align="center", width=2)
-    printer.text("Groceries for {}!\n".format(now))
+    printer.text("\n")
+    now = datetime.now().strftime("%m/%d/%Y")
+    printer.text("Groceries for\n{}\n".format(now))
     printer.text("\n")
 
     printer.text(shopping_list)
-
-    printer.set(align="center", width=2)
-    printer.text("\n")
-    printer.text("Have a great day! :)\n")
 
     printer.cut()
 
